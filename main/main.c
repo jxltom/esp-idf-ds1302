@@ -84,24 +84,6 @@ static bool obtain_time(void)
 
 void setClock(void *pvParameters)
 {
-    // obtain time over NTP
-    ESP_LOGI(pcTaskGetName(0), "Connecting to WiFi and getting time over NTP.");
-    if(!obtain_time()) {
-        ESP_LOGE(pcTaskGetName(0), "Fail to getting time over NTP.");
-        while (1) { vTaskDelay(1); }
-    }
-
-    // update 'now' variable with current time
-    time_t now;
-    struct tm timeinfo;
-    char strftime_buf[64];
-    time(&now);
-    now = now + (CONFIG_TIMEZONE*60*60);
-    localtime_r(&now, &timeinfo);
-    strftime(strftime_buf, sizeof(strftime_buf), "%c", &timeinfo);
-    ESP_LOGI(pcTaskGetName(0), "The current date/time is: %s", strftime_buf);
-
-
     // Initialize RTC
     DS1302_Dev dev;
     if (!DS1302_begin(&dev, CONFIG_CLK_GPIO, CONFIG_IO_GPIO, CONFIG_CE_GPIO)) {
@@ -110,35 +92,15 @@ void setClock(void *pvParameters)
     }
     ESP_LOGI(pcTaskGetName(0), "Set initial date time...");
 
-    /*
-    Member    Type Meaning(Range)
-    tm_sec    int  seconds after the minute(0-60)
-    tm_min    int  minutes after the hour(0-59)
-    tm_hour   int  hours since midnight(0-23)
-    tm_mday   int  day of the month(1-31)
-    tm_mon    int  months since January(0-11)
-    tm_year   int  years since 1900
-    tm_wday   int  days since Sunday(0-6)
-    tm_yday   int  days since January 1(0-365)
-    tm_isdst  int  Daylight Saving Time flag	
-    */
-    ESP_LOGD(pcTaskGetName(0), "timeinfo.tm_sec=%d",timeinfo.tm_sec);
-    ESP_LOGD(pcTaskGetName(0), "timeinfo.tm_min=%d",timeinfo.tm_min);
-    ESP_LOGD(pcTaskGetName(0), "timeinfo.tm_hour=%d",timeinfo.tm_hour);
-    ESP_LOGD(pcTaskGetName(0), "timeinfo.tm_wday=%d",timeinfo.tm_wday);
-    ESP_LOGD(pcTaskGetName(0), "timeinfo.tm_mday=%d",timeinfo.tm_mday);
-    ESP_LOGD(pcTaskGetName(0), "timeinfo.tm_mon=%d",timeinfo.tm_mon);
-    ESP_LOGD(pcTaskGetName(0), "timeinfo.tm_year=%d",timeinfo.tm_year);
-
     // Set initial date and time
     DS1302_DateTime dt;
-    dt.second = timeinfo.tm_sec;
-    dt.minute = timeinfo.tm_min;
-    dt.hour = timeinfo.tm_hour;
-    dt.dayWeek = timeinfo.tm_wday; // 0= Sunday 1 = Monday
-    dt.dayMonth = timeinfo.tm_mday;
-    dt.month = (timeinfo.tm_mon + 1);
-    dt.year = (timeinfo.tm_year + 1900);
+    dt.second = 12;
+    dt.minute = 12;
+    dt.hour = 12;
+    dt.dayWeek = 12; // 0= Sunday 1 = Monday
+    dt.dayMonth = 12;
+    dt.month = 12;
+    dt.year = 2022;
     DS1302_setDateTime(&dev, &dt);
 
     // Check write protect state
@@ -253,23 +215,11 @@ void app_main(void)
     ESP_LOGI(TAG, "CONFIG_TIMEZONE= %d", CONFIG_TIMEZONE);
     ESP_LOGI(TAG, "Boot count: %d", boot_count);
 
-#if CONFIG_SET_CLOCK
     // Set clock & Get clock
     if (boot_count == 1) {
         xTaskCreate(setClock, "setClock", 1024*4, NULL, 2, NULL);
     } else {
         xTaskCreate(getClock, "getClock", 1024*4, NULL, 2, NULL);
     }
-#endif
-
-#if CONFIG_GET_CLOCK
-    // Get clock
-    xTaskCreate(getClock, "getClock", 1024*4, NULL, 2, NULL);
-#endif
-
-#if CONFIG_DIFF_CLOCK
-    // Diff clock
-    xTaskCreate(diffClock, "diffClock", 1024*4, NULL, 2, NULL);
-#endif
 }
 
