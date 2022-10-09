@@ -184,7 +184,7 @@ bool DS1302_getDateTime(DS1302_Dev *dev, DS1302_DateTime *dateTime)
         (dateTime->hour > 23) ||
         (dateTime->dayMonth < 1) || (dateTime->dayMonth > 31) ||
         (dateTime->month < 1) || (dateTime->month > 12) ||
-        (dateTime->dayWeek < 1) || (dateTime->dayWeek > 7) ||
+        (dateTime->dayWeek > 7) ||
         (dateTime->year > 2099))
     {
         ESP_LOGW(TAG, "dateTime->second=%d",dateTime->second);
